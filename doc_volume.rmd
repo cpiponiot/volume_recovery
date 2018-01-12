@@ -1,0 +1,735 @@
+---
+title: "Log - volume recovery"
+author: "Camille Piponiot"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    theme: yeti
+    toc: yes
+    toc_float: yes
+bibliography: library.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, results='hide', warning=FALSE)
+```
+
+```{r, include=FALSE}
+library(rstan)
+library(data.table)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+library(corrplot)
+```
+
+# The data
+
+## The TmFO network
+The study is based on data from TmFO network . 
+[describe]
+In all plots all trees $\geq$~50~cm~DBH were identified, tagged and mapped. 
+[table: measurements years per site]
+
+### Volume per site {.tabset .tabset-pills } 
+
+```{r tmfo_vol}
+source("codes/write_metadata.R")
+vol_data = subset(data, status==1)[,.(sum(vol/plot.size)),.(site,idplot,year,treat,plot.size, site_name)]
+rm(data)
+```
+
+#### Braga Supay y Lobillo
+```{r bsl_vol}
+i = "bsl"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",unique(dt$plot.size),"ha"))
+```
+
+#### Chico Bocão
+```{r}
+i = "chb"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",unique(dt$plot.size),"ha"))
+```
+
+#### Cumaru
+```{r}
+i = "cum"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",unique(dt$plot.size),"ha"))
+```
+
+#### Ecosilva
+```{r}
+i = "eco"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",unique(dt$plot.size),"ha"))
+```
+
+#### INPA
+```{r}
+i = "inp"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Mean plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Iracema
+```{r}
+i = "ira"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Itacoatiara
+```{r}
+i = "ita"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Jari
+```{r}
+i = "jar"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+
+#### La Chonta
+```{r}
+i = "lch"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Mean plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Peteco
+```{r}
+i = "pet"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Paracou
+```{r}
+i = "prc"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Paragominas
+```{r}
+i = "prg"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Tabocal
+```{r}
+i = "tbc"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+#### Tapajos
+```{r}
+i = "tpj"
+dt = subset(vol_data, site==i)
+dt = dt[order(idplot,year)]
+# mat = spread(data = dt, key = year, value = V1)
+plot(dt$V1~dt$year, col=as.numeric(dt$treat)+1, pch=16,xlab="t",ylab="Volume (m3/ha)")
+sapply(unique(dt$idplot), function(j) lines(dt$V1[dt$idplot==j]~dt$year[dt$idplot==j], col=as.numeric(dt$treat[dt$idplot==j])+1))
+legend("topleft",col=unique(as.numeric(dt$treat)+1), lwd=2, legend=c("Control","Conventional","RIL","Sylvicultural treatment")[unique(as.numeric(dt$treat)+1)],title = paste("Plot size:",mean(dt$plot.size),"ha"))
+```
+
+
+## RadamBrasil data
+
+The RadamBrasil project was a big project carried one during the 1970 decade by the Brazilian government, in an attempt to map the potential resources of the Brazilian Amazon. Data was extracted at [IBGE website](ftp://geoftp.ibge.gov.br/informacoes_ambientais/vegetacao/vetores/escala_250_mil/amazonia_legal/). We used data from 2663 1~ha plots (with coordinates) where all trees above 100 cm of circumference were botanically identified and had their DBH measured and volume estimated.
+
+## Volume allometry
+Because we did not have a volume equation for all TmFO sites, we calibrated the following model with the RadamBrasil data:
+
+$$ log(V_i) = a_p  + b\times log(DBH_i) $$
+where $V_i$ ($m^3$) and $DBH_i$ ($cm$) are the volume and DBH of individual tree $i$, $a_p$ is the intercept for plot $p$, and $b$ is the slope (one for all plots).
+The resulting parameters are $b\sim \mathcal{N}(2.174,0.006)$ and the results for parameters $(a_p)_{1\leq p\leq2663}$ are in Figure ...
+
+```{r, echo=FALSE}
+load("C:/Users/camille.piponiot/Google Drive/volume/a_radam.Rdata")
+hist(ap)
+```
+
+To model parameter $a_p$ in the allometric equation we used a radom forest algorithm, with the following environmental predictors:
+
+* soil : bulk density, propotion of sand, prportion of coarse fragments, cation exchange capacity, soil total depth (m). All soil predictors were extracted from the [SoilGrids database](https://www.soilgrids.org/) at a 1 km resultion, at a depth of 100 cm (except for soil depth).
+
+* climate: annual precipitation, precipitation seasonality, and solar radiation were extracted from the WorldClim 2.0 database at a resolution of 1~km.
+
+$a_s$ values were then predicted for each TmFO site $s$ with the results of the Random Forest model.
+
+The volume of each individual tree is then computed as:
+$$ V_{i,k,p,s} = a_s\times (DBH_{i,k,p,s})^b$$
+where $V_{i,k,p,s}$ and $DBH_{i,k,p,s}$ are the volume and DBH of individual $i$ at time $k$ on plot $p$ in site $s$.
+
+
+## Volume computation
+The total volume at each site $s$, plot $p$ and census $k$ was computed as:
+$$ V_{k,p,s} = \sum_{i \in I_{k,p,s}} V_{i,k,p,s} \times (Surf_p)^{-1}$$
+where $I_{p,k}$ is the set of live trees $\geq$50~cm~DBH in plot $p$ (of area $Surf_p$) at census $k$ and $V_{i,k,p,s}$ is the volume of the tree $i$ at census $k$.
+
+Annual volume gain $\Delta Vg_{k,p,s}$ and annual volume loss $\Delta Vl_{k,p,s}$ ($m^3ha^{-1}yr^{-1}$) were computed as:
+$$
+\forall k\geq  2, \left\{ \begin{split}
+      					  & \Delta Vg_{k,p,s} = \sum_{i\in I_{k,p,s}} \left( V_{i,k,p,s} - V_{i,k-1,p,s} \right) \times (Surf_p)^{-1}\\
+						  & \Delta Vl_{k,p,s} = \sum_{i\in I_{k-1,p,s} \cap \overline{I_{k,p,s}}} \left( V_{i,k,p,s} - V_{i,k-1,p,s} \right) \times (Surf_p)^{-1}
+    \end{split}
+\right.
+$$
+where $I_{k,p,s}$ is the set of live trees $\geq$50~cm~DBH in plot $p$ at census $k$ and $I_{k-1,p,s} \cap \overline{I_{k,p,s}}$ is the set of trees that died between censuses $k-1$ and $k$ in plot $p$ in site $s$. If one tree $i \in I_{k,p,s}$ was $<$50~cm~DBH at census $k-1$, then $V_{i,k-1,p,s}=0 $.
+
+
+# The model
+
+## In the absence of disturbance
+The model presented here links the fluxes, integrated over time, with the corresponding stocks (here the timber volume). Let us consider the theoretical case where the forest recovers from scratch and is not subject to any disturbance. Let $t$ be the maturity of the stand, in years: $V(t=0)=0$ and $\forall t>0, V(t)>0$, with $V(t)$ the total volume of the stand at maturity $t$. The total volume change is
+
+$$
+\frac{dV(t)}{dt}= \frac{dVg(t)}{dt}-\frac{dVl(t)}{dt}
+$$
+
+The volume gain from growth $\frac{dVg(t)}{dt}$ is the stand annual volume productivity. By analogy with well-studied carbon dynamics \cite{Malhi2012}, we consider this net volume productivity to be the difference of gross volume productivity $GVP(t)$ and the volume loss due to respiration $VR(t)$.
+
+The gross volume productivity $GVP$ increases with stand maturity until reaching a finite limit, the ecosystem maximum gross productivity:
+$$
+GVP(t) = \alpha_G\times (1-e^{-\beta_G\times t})
+$$
+where $\alpha_G$ is the finite limit and $\beta_G$ the rate at which it is reached.
+
+The respiration $VR$, i.e the energy cost of maintenance, is proportional to the total volume:
+$$
+VR(t) = \theta\times V(t)
+$$
+where $\theta$ is a constant.
+
+Defining the net volume productivity as the difference of $GVP(t)$, assumed to increase but decelerate with forest maturity, and $VR(t)$, assumed to linearly increase with total volume, allows a hump-shaped net productivity curve (Fig....), similar to previous results on carbon dynamics [@Chen2002,@He2012].\\
+
+
+
+We expect the annual volume loss by mortality to reach a finite limit $\alpha_M$ at a rate $\beta_M$. We thus have:
+$$
+\forall t\in[0,t_ {ini}], \left\{ \begin{split}
+         & \frac{dVg(t)}{dt} = GVP(t) - VR(t) =  \alpha_G \times\left(1-e^{-\beta_G t}\right) - \theta\times V(t)\\
+		 & \frac{dVl(t)}{dt} = \alpha_M \times \left(1-e^{-\beta_M t}\right)\\
+		 & \frac{dV(t)}{dt} = \frac{dVg(t)}{dt} - \frac{dVl(t)}{dt}
+    \end{split}
+\right.
+$$
+
+We get the non-homogeneous differential equation of first order:
+$$
+\left\{ \begin{split}
+         & \frac{dV(t)}{dt} = \alpha_G \times\left(1-e^{-\beta_G t} \right) - \theta \times V(t) - \alpha_M \times \left(1-e^{-\beta_M t}\right) \\
+		 & \text{with } V(0) = 0
+		\end{split}
+\right.
+$$
+
+The solution of this equation is:
+
+$$
+\label{eq:vol}
+V(t) = \frac{\alpha_G}{\theta}\Big( 1- \frac{\theta\times e^{-\beta_G t} - \beta_G\times e^{-\theta t} }{\theta - \beta_G}\Big) - \frac{\alpha_M}{\theta}\Big( 1- \frac{\theta\times e^{-\beta_M t} - \beta_M\times e^{-\theta t} }{\theta - \beta_M} \Big)
+$$
+To have $V(t)>0$, we must have $\beta_G > \beta_M$.
+
+We thus have the following equations:
+$$
+\left\{ \begin{split}
+         & \frac{dVg(t)}{dt} = \frac{\alpha_G\times\beta_G}{\theta-\beta_G} \Big(e^{-\beta_G t} - e^{-\theta t} \Big) + \alpha_M \Big( 1- \frac{\theta\times e^{-\beta_M t} - \beta_M\times e^{-\theta t} }{\theta - \beta_M} \Big) \\
+		& \frac{dVl(t)}{dt} = \alpha_M \times (1-e^{-\beta_M t })
+		\end{split}
+\right.
+$$
+
+The volume potential of the forest stand (i.e. the volume of an infinitely-mature stand) is:
+$$
+vmax = \lim_{\infty} (V) = \frac{\alpha_G - \alpha_M}{\theta}
+$$
+
+
+## Hypothesis
+
+Initial stand maturity ($ti$), maximum primary productivity ($\alpha_G$) and maximum volume ($vmax$) vary among sites; other parameters have only one value for all TmFO. 
+
+
+## Parameters prior and justification
+
+# Inference
+
+```{r inf_data}
+source("codes/inference_data.R")
+```
+
+# Trying the model without covariates
+
+## Stan Inference {.tabset .tabset-pills #aP }
+
+```{r}
+init_f <- function() { list(aP = rep(7,S), theta=0.008, bP=0.003, bM=0.002, tlog = rep(100, L), ti = rep(250, S)) ; }
+
+# limitvmax = rep(500,S);
+# stan_vmax_aP = stan(file="stan models/tmfo_vmax_and_aP_2.stan", init=init_f,
+#                     chains=3, iter=2000, warmup=1000)
+# save(stan_vmax_aP, file="stanfile_vmaxaP.Rdata")
+load("stanfile_vmaxaP.Rdata")
+```
+
+### $\beta_G$, $\beta_M$, $\theta$
+```{r, echo=F}
+trace1 <- traceplot(stan_vmax_aP, pars=c("bP","bM","theta"))
+trace1
+ggsave("interm results/testing models no covar/trace_vmaxaP_1.pdf", width=15, height=10)
+```
+
+### $\alpha_G$
+```{r, echo=F}
+trace2 <- traceplot(stan_vmax_aP, pars="aP") 
+levels(trace2$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
+trace2+ labs(title='aG')
+ggsave("interm results/testing models no covar/trace_vmaxaP_aP.pdf", width=15, height=10)
+```
+
+### $vmax$
+```{r, echo=F}
+trace3 <- traceplot(stan_vmax_aP, pars="vmax")
+levels(trace3$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
+trace3 + labs(title='vmax')
+ggsave("interm results/testing models no covar/trace_vmaxaP_vmax.pdf", width=15, height=10)
+```
+
+
+### $ti$
+```{r}
+trace4 <- traceplot(stan_vmax_aP, pars="ti") 
+levels(trace4$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
+trace4+ labs(title='ti')
+ggsave("interm results/testing models no covar/trace_vmaxaP_ti.pdf", width=15, height=10)
+```
+
+### $\sigma_V$, $\sigma_G$, 
+```{r}
+trace5 <- traceplot(stan_vmax_aP, pars=c("sigma_V", "sigma_G", "sigma_M")) 
+trace5
+ggsave("interm results/testing models no covar/trace_vmaxaP_ti.pdf", width=15, height=10)
+```
+
+### $tlog$
+```{r}
+plot(stan_vmax_aP, pars="tlog")
+ggsave("interm results/tlog_vmaxaP.pdf", width=15, height=10)
+```
+
+
+## Goodness of prediction {.tabset .tabset-pills #tiS }
+
+```{r, echo=FALSE}
+pars = rstan::extract(stan_vmax_aP)
+maxl = which.max(pars$lp__)
+source("gfbi/codes/volume_equations.R")
+samp = sample(1:nrow(pars$aP), min(nrow(pars$aP),500))
+tvec = 1:550
+ti_pred = pars$ti[maxl,md_inf$ns]; ti = pars$ti[which.max(pars$lp__),];
+for (i in 1:length(logged)) { ti_pred[md_inf$np==logged[i]] = pars$tlog[maxl,i]}
+```
+
+### Braga Supay y Lobillo
+
+```{r, echo=FALSE}
+site="bsl"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500), ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Chico Bocão
+
+```{r, echo=FALSE}
+site="chb"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Cumaru
+
+```{r, echo=FALSE}
+site="cum"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Ecosilva
+
+```{r, echo=FALSE}
+site="eco"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### INPA
+
+```{r, echo=FALSE}
+site="inp"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Iracema
+
+```{r, echo=FALSE}
+site="ira"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Itacoatiara
+
+```{r, echo=FALSE}
+site = "ita"; s=unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Jari
+
+```{r, echo=FALSE}
+site = "jar"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### La Chonta
+
+```{r, echo=FALSE}
+site = "lch"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Peteco
+
+```{r, echo=FALSE}
+site = "pet"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+ti = pars$ti[which.max(pars$lp__),];abline(v=ti[s])
+```
+
+### Paracou
+
+```{r, echo=FALSE}
+site = "prc"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+ti = pars$ti[which.max(pars$lp__),];abline(v=ti[s])
+```
+
+Maturity predictions look strange... Not at all what I got with the first study!
+```{r}
+mudeltaV = c(); aP = pars$aP[which.max(pars$lp__),]; aM = pars$aM[which.max(pars$lp__),]; bP = pars$bP[which.max(pars$lp__)]; bM = pars$bM[which.max(pars$lp__)]; theta = pars$theta[which.max(pars$lp__)];tlog = pars$tlog[which.max(pars$lp__),]; ti = pars$ti[which.max(pars$lp__),];
+for (i in 1:L){
+  mudeltaV[i] = aP[ps[logged[i]]]/(theta*(theta-bP)) * ( theta*(exp(-bP*(tlog[i]))-exp(-bP*ti[ps[logged[i]]])) - bP*(exp(-theta*tlog[i])-exp(-theta*ti[ps[logged[i]]])) ) - aM[ps[logged[i]]]/(theta*(theta-bM)) * ( theta*(exp(-bM*tlog[i])-exp(-bM*ti[ps[logged[i]]])) - bM*(exp(-theta*tlog[i])-exp(-theta*ti[ps[logged[i]]])) ) ;
+}
+plot(deltaV, mudeltaV, col=ps[logged], pch=16, asp=1); abline(0,1)
+```
+
+### Paragominas
+
+```{r, echo=FALSE}
+site = "prg"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Tabocal
+
+```{r, echo=FALSE}
+site = "tbc"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+### Tapajos
+
+```{r, echo=FALSE}
+site = "tpj"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i,s]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+abline(v=ti[s])
+```
+
+# Testing the effect of covariates
+
+## Correlation between parameters value and covariates
+For now, we will use the parameters maximum likelihood value from the model where Initial stand maturity ($ti$), maximum primary productivity ($\alpha_G$) and maximum
+volume ($vmax$) vary among plots, but $ti$ does not vary from plot to plot.
+
+```{r, echo=F}
+md_plot$ns = as.numeric(as.factor(md_plot$site))
+covar = unique(md_plot[,c("ns","bkd","psd","cec","dep","cfr","prec","seas","rad")])
+pars = rstan::extract(stan_vmax_aP); maxl = which.max(pars$lp__);
+aP = pars$aP[maxl,]; vmax = pars$vmax[maxl,]; ti = pars$ti[maxl,]
+site_variables = data.frame(ns=1:14, ti=ti, vmax=vmax, aP=aP)
+site_variables = merge(site_variables, covar, by="ns")
+site_variables$ns = NULL
+colnames(site_variables) = c("ti","vmax","aG","bulk density","Proportion of sand","CEC","Soil depth","Coarse fragment","Precipitation","Seasonality","Solar radiation")
+M = cor(site_variables)
+
+corrplot(M, method="circle")
+corrplot(M[1:3,-c(1:3)], method="number")
+```
+
+# Tests 
+
+### Grouping by site and treatment for plots < 5 ha
+
+```{r}
+smallplots = subset(md_plot, plot.size<5)
+smallplots$newplot = paste(smallplots$site, smallplots$treat, sep="_")
+smallplots$newplot[smallplots$site=="ita"] = paste(smallplots$newplot[smallplots$site=="ita"], substring(smallplots$idplot[smallplots$site=="ita"], 5,5), sep="")
+
+newplots = smallplots[,.(dVdt=mean(dVdt), dVMdt=mean(dVMdt), plot.size = sum(plot.size), Vmort = mean(Vmort), V=mean(V), dVGdt=mean(dVGdt)),.(site, newplot,year,treat)]
+newplots$idplot = newplots$newplot
+tmin = newplots[,.(tmin=year[which.min(V[year<min(year)+5])]),.(idplot)]
+newplots = merge(newplots, tmin, by="idplot")
+newplots$t = newplots$year-newplots$tmin
+
+cols = c("site","idplot","t","year","treat","plot.size","V","Vmort","dVdt","dVGdt","dVMdt")
+md_grouped = rbind.data.frame(subset(md_plot[,cols,with=FALSE], plot.size>=5), newplots[,cols,with=FALSE])
+library(taRifx)
+md_grouped <- japply( md_grouped, 3:11, as.numeric )
+md_grouped$tmin = md_grouped$year + md_grouped$t
+# par(mfrow=c(2,3))
+# sapply(unique(md_grouped$site), function(S) {df=subset(md_grouped, site==S) 
+# plot(df$V~df$t, pch=16, main=S, col=as.numeric(as.factor(df$idplot)))})
+
+## inference data ##
+md_grouped$t0 = as.numeric(md_grouped$tmin)
+md_grouped$t0[md_grouped$treat==0] = 0
+md_grouped$ns = as.numeric(as.factor(md_grouped$site))
+md_grouped$np = as.numeric(as.factor(as.character(md_grouped$idplot)))
+md_inf = subset(md_grouped, t>0)
+
+## plot info
+per_plot = md_grouped[order(np),.(deltaV=V[which.min(t)]-V[t==0]),.(np,ns,treat)]
+ps = per_plot$ns
+logged = which(per_plot$treat>0)
+md_inf$logged = md_inf$np %in% logged
+deltaV = per_plot$deltaV[per_plot$treat>0]
+
+## cumulative fluxes
+md_inf = md_inf[order(t)]
+cumvol = md_inf[,.(t,cumsum(dVGdt),cumsum(dVMdt)),.(np)]
+colnames(cumvol) = c("np","t","cumVG","cumVM")
+md_inf = merge(md_inf, cumvol)
+
+
+N=nrow(md_inf);  S=max(md_inf$ns); P=max(md_inf$np) 
+L = length(logged); ns = md_inf$ns; np = md_inf$np
+t = md_inf$t; cVG = md_inf$cumVG; cVM = md_inf$cumVM; V = md_inf$V
+
+
+```
+
+# Trying the model without covariates
+
+## Stan Inference {.tabset .tabset-pills #aP }
+
+```{r}
+init_f <- function() { list(aP = 6, theta=0.008, bP=0.005, bM=0.003, tlog = rep(100, L), ti = 250, vmax=rep(100, S)) ; }
+
+# stan_simplifie = stan("stan models/tmfo_simplifie.stan", init=init_f, iter=5000, warmup=4000)
+# 
+# save(stan_simplifie, file="stan models/stan_simplifie.Rdata")
+load(file="stan models/stan_simplifie.Rdata")
+
+traceplot(stan_simplifie, pars=c("ti","aP","bP","bM","theta"))
+```
+
+### vmax
+
+```{r}
+trace3 <- traceplot(stan_simplifie, pars="vmax")
+levels(trace3$data$parameter) <- unique(md_inf$site[order(md_inf$ns)])
+trace3 + labs(title='vmax')
+```
+
+## Paracou predictions
+
+```{r, echo=FALSE}
+pars = rstan::extract(stan_simplifie)
+maxl = which.max(pars$lp__)
+source("gfbi/codes/volume_equations.R")
+samp1 = sample(1:nrow(pars$aP), min(nrow(pars$aP),500))
+tvec = 1:550
+ti_pred = rep(pars$ti[maxl],nrow(md_inf));
+for (i in 1:length(logged)) { ti_pred[md_inf$np==logged[i]] = pars$tlog[maxl,i]}
+
+site = "prc"; s = unique(md_inf$ns[md_inf$site==site])
+pred = sapply(samp, function(i){
+  aP = pars$aP[i]; vmax = pars$vmax[i,s]; theta=pars$theta[i]; aM = aP - vmax * theta
+  bP = pars$bP[i]; bM = pars$bM[i]; sdV = pars$sigma_V[i]
+  rlnorm(length(tvec), mean=log(volume(tvec, ag=aP, am=aM, th=theta, bg=bP, bm=bM)), sd=sdV)
+})
+IC = apply(pred, 1, function(X) quantile(X,probs = c(0.025,0.975)))
+pred_maxl = volume(tvec, ag=pars$aP[which.max(pars$lp__)], am=pars$aM[which.max(pars$lp__),s], th=pars$theta[which.max(pars$lp__)], bg=pars$bP[which.max(pars$lp__)], bm=pars$bM[which.max(pars$lp__)])
+plot(md_inf$V[md_inf$ns==s], x = md_inf$t[md_inf$ns==s] + ti_pred[md_inf$ns==s], ylab="V (m3/ha)", xlab="Maturity", xlim=c(0,500),ylim=c(0,max(IC)),pch=16, col=md_inf$np[md_inf$ns==s])
+polygon(x = c(tvec,rev(tvec)), y = c(IC[1,], rev(IC[2,])), col = "#00000020", border=NA)
+ti = pars$ti[which.max(pars$lp__)];abline(v=ti[s])
+lines(pred_maxl~tvec)
+```
+
