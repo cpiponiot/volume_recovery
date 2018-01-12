@@ -110,7 +110,9 @@ colnames(diffv)=c("site","idplot","t","dVdt","dVMdt")
 md_plot = merge(diffv,md_plot,by=c("site","idplot","t"))
 md_plot$dVGdt = md_plot$dVdt + md_plot$dVMdt
 
-save(md_plot, file="data/metadata.Rdata")
+vol_data = subset(data, status==1)[,.(sum(vol/plot.size)),.(site,idplot,year,treat,plot.size, site_name)]
+
+rm(data)
 
 # ### volume per site/plot
 # vol_data = subset(data, status==1)[,.(sum(vol/plot.size)),.(site,idplot,year,treat)]

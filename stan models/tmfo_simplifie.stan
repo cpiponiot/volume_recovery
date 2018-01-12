@@ -14,8 +14,6 @@ data {
   real<lower=-1> cVG[N]; // cumulative volume gain
   real<lower=-1> cVM[N]; // cumulative volume loss (negative values)
   real<lower=0> V[N];    // total volume
-  real<lower=0> meanV0[S]; // mean volume of each site
-  real<lower=0> sdV0[S]; // standard deviation of volume obs. of each site
   real deltaV[L];        // extracted volume
 }
 
