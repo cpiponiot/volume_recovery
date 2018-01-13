@@ -4,8 +4,8 @@
 
 ### change t0 so that for logged plots it corresponds to the minimum volume during 
 ### the 5 years following logging events; if the minimum volume occurs during a different period, discard the plot
-minV = md_plot[order(t),.(t[which.min(V)], first(V) - min(V[t%in%0:5])),.(idplot,site,treat)]
-colnames(minV)[4:5] <- c("tmin","deltaV")
+minV = md_plot[order(t),.(tmin = t[which.min(V[t %in% 0:5])], 
+                          deltaV = first(V) - min(V[t %in% 0:5])),.(idplot,site,treat)]
 
 md_plot = merge(md_plot, site_info, by="site")
 md_plot = merge(md_plot, minV, by=c("idplot","site","treat"))
@@ -15,6 +15,7 @@ md_plot$t_before = md_plot$t
 md_plot$t = md_plot$t - md_plot$t0
 md_plot$ns = as.numeric(as.factor(md_plot$site))
 md_plot$np = as.numeric(as.factor(md_plot$idplot))
+
 md_inf = subset(md_plot, t>0)
 columns = c("site","prec","seas","rad","bkd","cec","cfr","psd","dep")
 site_md = unique(md_inf[,columns,with=FALSE])
@@ -26,6 +27,7 @@ md_inf = md_inf[order(t)]
 cumvol = md_inf[,.(t,cumsum(dVGdt),cumsum(dVMdt)),.(np)]
 colnames(cumvol) = c("np","t","cumVG","cumVM")
 md_inf = merge(md_inf, cumvol)
+
 ## plot info
 per_plot = md_plot[order(np,t),.(s=unique(ns), treat=unique(treat), deltaV=unique(deltaV)),.(np)]
 ps = per_plot$s

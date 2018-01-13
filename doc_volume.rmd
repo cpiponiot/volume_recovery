@@ -7,7 +7,7 @@ output:
     theme: yeti
     toc: yes
     toc_float: yes
-bibliography: library.bib
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -33,9 +33,9 @@ In all plots all trees $\geq$~50~cm~DBH were identified, tagged and mapped.
 ### Volume per site {.tabset .tabset-pills } 
 
 ```{r tmfo_vol}
-source("codes/write_metadata.R")
-vol_data = subset(data, status==1)[,.(sum(vol/plot.size)),.(site,idplot,year,treat,plot.size, site_name)]
-rm(data)
+# source("codes/write_metadata.R")
+# save(md_plot,vol_data, file="metadata.Rdata")
+load(file="metadata.Rdata")
 ```
 
 #### Braga Supay y Lobillo
@@ -318,6 +318,7 @@ Initial stand maturity ($ti$), maximum primary productivity ($\alpha_G$) and max
 # Inference
 
 ```{r inf_data}
+load("site_info.Rdata")
 source("codes/inference_data.R")
 ```
 
@@ -328,7 +329,6 @@ source("codes/inference_data.R")
 ```{r}
 init_f <- function() { list(aP = rep(7,S), theta=0.008, bP=0.003, bM=0.002, tlog = rep(100, L), ti = rep(250, S)) ; }
 
-# limitvmax = rep(500,S);
 # stan_vmax_aP = stan(file="stan models/tmfo_vmax_and_aP_2.stan", init=init_f,
 #                     chains=3, iter=2000, warmup=1000)
 # save(stan_vmax_aP, file="stanfile_vmaxaP.Rdata")
@@ -339,7 +339,7 @@ load("stanfile_vmaxaP.Rdata")
 ```{r, echo=F}
 trace1 <- traceplot(stan_vmax_aP, pars=c("bP","bM","theta"))
 trace1
-ggsave("interm results/testing models no covar/trace_vmaxaP_1.pdf", width=15, height=10)
+# ggsave("graphs/trace_vmaxaP_1.pdf", width=15, height=10)
 ```
 
 ### $\alpha_G$
@@ -347,7 +347,7 @@ ggsave("interm results/testing models no covar/trace_vmaxaP_1.pdf", width=15, he
 trace2 <- traceplot(stan_vmax_aP, pars="aP") 
 levels(trace2$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
 trace2+ labs(title='aG')
-ggsave("interm results/testing models no covar/trace_vmaxaP_aP.pdf", width=15, height=10)
+# ggsave("graphs/trace_vmaxaP_aP.pdf", width=15, height=10)
 ```
 
 ### $vmax$
@@ -355,7 +355,7 @@ ggsave("interm results/testing models no covar/trace_vmaxaP_aP.pdf", width=15, h
 trace3 <- traceplot(stan_vmax_aP, pars="vmax")
 levels(trace3$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
 trace3 + labs(title='vmax')
-ggsave("interm results/testing models no covar/trace_vmaxaP_vmax.pdf", width=15, height=10)
+# ggsave("graphs/trace_vmaxaP_vmax.pdf", width=15, height=10)
 ```
 
 
@@ -364,20 +364,20 @@ ggsave("interm results/testing models no covar/trace_vmaxaP_vmax.pdf", width=15,
 trace4 <- traceplot(stan_vmax_aP, pars="ti") 
 levels(trace4$data$parameter) <- unique(md_inf$site_name[order(md_inf$ns)])
 trace4+ labs(title='ti')
-ggsave("interm results/testing models no covar/trace_vmaxaP_ti.pdf", width=15, height=10)
+# ggsave("graphs/trace_vmaxaP_ti.pdf", width=15, height=10)
 ```
 
 ### $\sigma_V$, $\sigma_G$, 
 ```{r}
 trace5 <- traceplot(stan_vmax_aP, pars=c("sigma_V", "sigma_G", "sigma_M")) 
 trace5
-ggsave("interm results/testing models no covar/trace_vmaxaP_ti.pdf", width=15, height=10)
+# ggsave("graphs/trace_vmaxaP_ti.pdf", width=15, height=10)
 ```
 
 ### $tlog$
 ```{r}
 plot(stan_vmax_aP, pars="tlog")
-ggsave("interm results/tlog_vmaxaP.pdf", width=15, height=10)
+# ggsave("graphs/tlog_vmaxaP.pdf", width=15, height=10)
 ```
 
 
@@ -386,7 +386,7 @@ ggsave("interm results/tlog_vmaxaP.pdf", width=15, height=10)
 ```{r, echo=FALSE}
 pars = rstan::extract(stan_vmax_aP)
 maxl = which.max(pars$lp__)
-source("gfbi/codes/volume_equations.R")
+source("codes/volume_equations.R")
 samp = sample(1:nrow(pars$aP), min(nrow(pars$aP),500))
 tvec = 1:550
 ti_pred = pars$ti[maxl,md_inf$ns]; ti = pars$ti[which.max(pars$lp__),];
@@ -619,7 +619,7 @@ For now, we will use the parameters maximum likelihood value from the model wher
 volume ($vmax$) vary among plots, but $ti$ does not vary from plot to plot.
 
 ```{r, echo=F}
-md_plot$ns = as.numeric(as.factor(md_plot$site))
+md_plot$ns = as.numeric(as.factor(as.character(md_plot$site)))
 covar = unique(md_plot[,c("ns","bkd","psd","cec","dep","cfr","prec","seas","rad")])
 pars = rstan::extract(stan_vmax_aP); maxl = which.max(pars$lp__);
 aP = pars$aP[maxl,]; vmax = pars$vmax[maxl,]; ti = pars$ti[maxl,]
@@ -638,51 +638,10 @@ corrplot(M[1:3,-c(1:3)], method="number")
 ### Grouping by site and treatment for plots < 5 ha
 
 ```{r}
-smallplots = subset(md_plot, plot.size<5)
-smallplots$newplot = paste(smallplots$site, smallplots$treat, sep="_")
-smallplots$newplot[smallplots$site=="ita"] = paste(smallplots$newplot[smallplots$site=="ita"], substring(smallplots$idplot[smallplots$site=="ita"], 5,5), sep="")
-
-newplots = smallplots[,.(dVdt=mean(dVdt), dVMdt=mean(dVMdt), plot.size = sum(plot.size), Vmort = mean(Vmort), V=mean(V), dVGdt=mean(dVGdt)),.(site, newplot,year,treat)]
-newplots$idplot = newplots$newplot
-tmin = newplots[,.(tmin=year[which.min(V[year<min(year)+5])]),.(idplot)]
-newplots = merge(newplots, tmin, by="idplot")
-newplots$t = newplots$year-newplots$tmin
-
-cols = c("site","idplot","t","year","treat","plot.size","V","Vmort","dVdt","dVGdt","dVMdt")
-md_grouped = rbind.data.frame(subset(md_plot[,cols,with=FALSE], plot.size>=5), newplots[,cols,with=FALSE])
-library(taRifx)
-md_grouped <- japply( md_grouped, 3:11, as.numeric )
-md_grouped$tmin = md_grouped$year + md_grouped$t
-# par(mfrow=c(2,3))
-# sapply(unique(md_grouped$site), function(S) {df=subset(md_grouped, site==S) 
-# plot(df$V~df$t, pch=16, main=S, col=as.numeric(as.factor(df$idplot)))})
-
-## inference data ##
-md_grouped$t0 = as.numeric(md_grouped$tmin)
-md_grouped$t0[md_grouped$treat==0] = 0
-md_grouped$ns = as.numeric(as.factor(md_grouped$site))
-md_grouped$np = as.numeric(as.factor(as.character(md_grouped$idplot)))
-md_inf = subset(md_grouped, t>0)
-
-## plot info
-per_plot = md_grouped[order(np),.(deltaV=V[which.min(t)]-V[t==0]),.(np,ns,treat)]
-ps = per_plot$ns
-logged = which(per_plot$treat>0)
-md_inf$logged = md_inf$np %in% logged
-deltaV = per_plot$deltaV[per_plot$treat>0]
-
-## cumulative fluxes
-md_inf = md_inf[order(t)]
-cumvol = md_inf[,.(t,cumsum(dVGdt),cumsum(dVMdt)),.(np)]
-colnames(cumvol) = c("np","t","cumVG","cumVM")
-md_inf = merge(md_inf, cumvol)
-
-
-N=nrow(md_inf);  S=max(md_inf$ns); P=max(md_inf$np) 
-L = length(logged); ns = md_inf$ns; np = md_inf$np
-t = md_inf$t; cVG = md_inf$cumVG; cVM = md_inf$cumVM; V = md_inf$V
-
-
+load("metadata.Rdata")
+source("codes/group_plots.R")
+md_plot = md_grouped
+source("codes/inference_data.R")
 ```
 
 # Trying the model without covariates
@@ -693,7 +652,7 @@ t = md_inf$t; cVG = md_inf$cumVG; cVM = md_inf$cumVM; V = md_inf$V
 init_f <- function() { list(aP = 6, theta=0.008, bP=0.005, bM=0.003, tlog = rep(100, L), ti = 250, vmax=rep(100, S)) ; }
 
 # stan_simplifie = stan("stan models/tmfo_simplifie.stan", init=init_f, iter=5000, warmup=4000)
-# 
+
 # save(stan_simplifie, file="stan models/stan_simplifie.Rdata")
 load(file="stan models/stan_simplifie.Rdata")
 
@@ -713,8 +672,8 @@ trace3 + labs(title='vmax')
 ```{r, echo=FALSE}
 pars = rstan::extract(stan_simplifie)
 maxl = which.max(pars$lp__)
-source("gfbi/codes/volume_equations.R")
-samp1 = sample(1:nrow(pars$aP), min(nrow(pars$aP),500))
+source("codes/volume_equations.R")
+samp = sample(1:nrow(pars$aP), min(nrow(pars$aP),500))
 tvec = 1:550
 ti_pred = rep(pars$ti[maxl],nrow(md_inf));
 for (i in 1:length(logged)) { ti_pred[md_inf$np==logged[i]] = pars$tlog[maxl,i]}
